@@ -1,0 +1,10 @@
+output/video
+output/frames
+output/gif
+
+bot_config.json
+
+*.log
+*.pyc
+__pycache__
+
