@@ -11,6 +11,8 @@ def clear_output_folder(output_folder):
     shutil.rmtree(output_folder + '/gif')
     os.mkdir(output_folder + '/gif')
 
+def async_dl_youtube_url(bot, job):
+    dl_youtube_url(job.context[0],job.context[1])
 
 def dl_youtube_url(url, output_folder):
     cwd = os.getcwd()

@@ -7,6 +7,7 @@ import re
 import json
 import logging
 import logging.config
+import time
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from telegram.ext import Updater, CommandHandler, Filters
@@ -54,7 +55,7 @@ def start(bot, update):
 
 
 @restricted
-def set_url(bot, update):
+def set_url(bot, update, job_queue):
     logger.info("set_url")
 
     url = update.message.text
@@ -65,8 +66,11 @@ def set_url(bot, update):
                     text="please enter a secure youtube url like (https://www.youtube.com...)")
         return ZERO
     
-    video.dl_youtube_url(url, 'output/video')
+    job_queue.run_once(video.async_dl_youtube_url,when=10,context=[url,'output/video'])
 
+    while len(job_queue.jobs) > 1:
+        time.sleep(30)
+    
     bot.send_message(chat_id=update.message.chat_id,
                      text="video saved")
 
@@ -139,7 +143,7 @@ updater = Updater(token)
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
-        ZERO: [MessageHandler(Filters.text, set_url)],
+        ZERO: [MessageHandler(Filters.text, set_url, pass_job_queue = True)],
         ONE: [MessageHandler(Filters.text, set_start_time, pass_user_data=True)],
         TWO: [MessageHandler(Filters.text, set_stop_time, pass_user_data=True)]        
     },
