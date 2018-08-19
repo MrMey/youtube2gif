@@ -27,12 +27,11 @@ logging.config.dictConfig(config_dict)
 logger = logging.getLogger(__name__)
 
 ZERO, ONE, TWO = range(3)
-with open("bot_config.json","r") as f:
-    config = json.load(f)
 
-token = config["token"]
+
+token = os.environ.get("TELEGRAM_TOKEN")
 # list of authorized id
-auth_ids = config['authorized_ids']
+auth_ids = [171531269]
 
 # decorator to restrict access to the bot
 def restricted(func):
