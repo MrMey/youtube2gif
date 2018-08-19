@@ -1,6 +1,6 @@
-output/video
-output/frames
-output/gif
+output/video/*
+output/frames/*
+output/gif/*
 
 bot_config.json
 
