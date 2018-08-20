@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import youtube_dl
 
 
 def clear_output_folder(output_folder):
@@ -11,20 +12,20 @@ def clear_output_folder(output_folder):
     shutil.rmtree(output_folder + '/gif')
     os.mkdir(output_folder + '/gif')
 
+
 def async_dl_youtube_url(bot, job):
-    dl_youtube_url(job.context[0],job.context[1])
+    dl_youtube_url(job.context[0], job.context[1])
+
 
 def dl_youtube_url(url, output_folder):
-    cwd = os.getcwd()
-    os.chdir(output_folder)
-    command = "youtube-dl -f mp4 -o '%(id)s.%(ext)s' '{}'".format(url)
-    print(command)
-    response = os.system(command)
+    ydl = youtube_dl.YoutubeDL({'outtmpl': output_folder + '/%(id)s%(ext)s'})
 
-    if response != 0:
-        raise Exception('command failed')
-    os.chdir(cwd)
-    return response
+    with ydl:
+        result = ydl.extract_info(
+            url,
+            download=True  # We just want to extract the info
+        )
+    return result
 
 
 def get_output_file_path(output_folder, fmt=[]):
@@ -50,7 +51,8 @@ def video_to_frames(video_path, output_folder, fps, start=None, stop=None):
     if stop is not None:
         command += '-to {} '.format(stop)
 
-    command += '-r {} -vf scale=320:-1 "{}/frame-%03d.jpg"'.format(fps, output_folder)
+    command += '-r {} -vf scale=320:-1 "{}/frame-%03d.jpg"'.format(
+        fps, output_folder)
     print(command)
     return os.system(command)
 
@@ -62,7 +64,6 @@ def get_video_info(video_path):
     duration = str(subprocess.check_output(command, shell=True))
     duration = duration[:-3]
     duration = float(duration.rstrip('\n').split('=')[1])
-
 
     command = "ffprobe -select_streams v -show_streams {} 2>/dev/null | grep -w nb_frames".format(
         video_path)
@@ -88,6 +89,7 @@ def select_frames(frame_folder, start, stop):
                   '/frame-{}.jpg'.format(x) for x in range(start, stop)]
     for file in frame_list:
         shutil.copy(file, 'output/sub_frames')
+
 
 def optimize(input_path, output_path, mode='-O3'):
     command = 'gifsicle {}'.format(input_path)

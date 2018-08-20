@@ -3,7 +3,10 @@ output/frames/*
 output/gif/*
 
 bot_config.json
-
+*.mkv
+*.avi
+*.mp4
+*.mp3
 *.log
 *.pyc
 __pycache__
