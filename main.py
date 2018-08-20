@@ -66,7 +66,7 @@ def set_url(bot, update, job_queue):
                     text="please enter a secure youtube url like (https://www.youtube.com...)")
         return ZERO
     
-    video.async_dl_youtube_url(url,'output/video')
+    video.dl_youtube_url(url,'output/video')
     
     bot.send_message(chat_id=update.message.chat_id,
                      text="video saved")
