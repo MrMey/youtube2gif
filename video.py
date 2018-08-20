@@ -18,7 +18,7 @@ def async_dl_youtube_url(bot, job):
 
 
 def dl_youtube_url(url, output_folder):
-    ydl = youtube_dl.YoutubeDL({'outtmpl': output_folder + '/%(id)s%(ext)s'})
+    ydl = youtube_dl.YoutubeDL({'outtmpl': output_folder + '/video'})
 
     with ydl:
         result = ydl.extract_info(
