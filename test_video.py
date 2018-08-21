@@ -5,7 +5,8 @@ import os
 def test_download():
     url = "https://www.youtube.com/watch?v=SgzXKCuM9CA"
     response = video.dl_youtube_url(url, 'output/video')
-
+    print(response.keys())
+    print('output/video/{}.{}'.format(response['id'],response['ext']))
 
 def test_video_info():
     video_path = os.listdir('output/video')[0]

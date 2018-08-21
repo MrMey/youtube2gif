@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 ZERO, ONE, TWO = range(3)
 
 
-token = os.environ.get("TELEGRAM_TOKEN")
+token = "605391156:AAE2q2zhFjmysZcMoDgXyg8UxmfsKaLaOhc" #os.environ.get("TELEGRAM_TOKEN")
 # list of authorized id
 auth_ids = [171531269]
 
@@ -55,7 +55,7 @@ def start(bot, update):
 
 
 @restricted
-def set_url(bot, update, job_queue):
+def set_url(bot, update, user_data):
     logger.info("set_url")
 
     url = update.message.text
@@ -66,15 +66,13 @@ def set_url(bot, update, job_queue):
                     text="please enter a secure youtube url like (https://www.youtube.com...)")
         return ZERO
     
-    video.dl_youtube_url(url,'output/video')
-    
+    result = video.dl_youtube_url(url,'output/video')
+    user_data['id'] = result['id']
+    user_data['ext'] = result['ext']
+
     bot.send_message(chat_id=update.message.chat_id,
                      text="video saved")
 
-    video_file_path = video.get_output_file_path('output/video', ['avi','mp4','mkv'])
-    duration, nb_frames = video.get_video_info(video_file_path)
-    fps = int(nb_frames / float(duration))
-    print(fps)
     bot.send_message(chat_id=update.message.chat_id,
                      text="start time? (%H:%M:%S.xxx)")
 
@@ -121,15 +119,14 @@ def set_stop_time(bot, update, user_data):
     bot.send_message(chat_id=update.message.chat_id,
                 text="starting the magic !")
 
-    video_file_path = video.get_output_file_path('output/video', ['avi','mp4','mkv'])
-
-    video.video_to_frames(video_file_path,'output/frames', 10, user_data['start'], user_data['stop'])
-    video.frames_to_gif('output/frames','output/gif/mygif.gif', 5)
+    video_path = 'output/video/' + user_data['id'] + '.mkv'
+    video.video_to_frames(video_path,'output/frames', 10, user_data['start'], user_data['stop'])
+    video.frames_to_gif('output/frames','output/gif/{}.gif'.format(user_data['id']), 5)
 
     bot.send_message(chat_id=update.message.chat_id,
                      text="gif saved")
     
-    gif_path = video.get_output_file_path('output/gif', ['gif'])
+    gif_path = 'output/gif/' + user_data['id'] + '.gif'
     bot.send_video(chat_id=update.message.chat_id,
                     video=open(gif_path,'rb'))
     video.clear_output_folder('output')
@@ -140,7 +137,7 @@ updater = Updater(token)
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
-        ZERO: [MessageHandler(Filters.text, set_url, pass_job_queue = True)],
+        ZERO: [MessageHandler(Filters.text, set_url, pass_user_data=True)],
         ONE: [MessageHandler(Filters.text, set_start_time, pass_user_data=True)],
         TWO: [MessageHandler(Filters.text, set_stop_time, pass_user_data=True)]        
     },
