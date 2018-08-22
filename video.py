@@ -14,16 +14,17 @@ def clear_output_folder(output_folder):
 
 
 def async_dl_youtube_url(bot, job):
-    dl_youtube_url(job.context[0], job.context[1])
+    print("start download")
+    dl_youtube_url(job.context[0], job.context[1],job.context[2])
+    print("finish download")
 
-
-def dl_youtube_url(url, output_folder):
+def dl_youtube_url(url, output_folder, download):
     ydl = youtube_dl.YoutubeDL({'outtmpl': output_folder + '/%(id)s'})
 
     with ydl:
         result = ydl.extract_info(
             url,
-            download=True  # We just want to extract the info
+            download=download  # We just want to extract the info
         )
     return result
 

@@ -27,10 +27,10 @@ logging.config.dictConfig(config_dict)
 # Log that the logger was configured
 logger = logging.getLogger(__name__)
 
-ZERO, ONE, TWO = range(3)
+ZERO, ONE, TWO, THREE = range(4)
 
 
-token = "605391156:AAE2q2zhFjmysZcMoDgXyg8UxmfsKaLaOhc" #os.environ.get("TELEGRAM_TOKEN")
+token = os.environ.get("TELEGRAM_TOKEN")
 # list of authorized id
 auth_ids = [171531269]
 
@@ -55,7 +55,7 @@ def start(bot, update):
 
 
 @restricted
-def set_url(bot, update, user_data):
+def set_url(bot, update, user_data, job_queue):
     logger.info("set_url")
 
     url = update.message.text
@@ -66,18 +66,32 @@ def set_url(bot, update, user_data):
                     text="please enter a secure youtube url like (https://www.youtube.com...)")
         return ZERO
     
-    result = video.dl_youtube_url(url,'output/video')
+
+    result = video.dl_youtube_url(url,'output/video', False)
     user_data['id'] = result['id']
     user_data['ext'] = result['ext']
 
     bot.send_message(chat_id=update.message.chat_id,
-                     text="video saved")
+                     text="video is downloading")
+
+    dl_job = job_queue.run_once(video.async_dl_youtube_url, when=10,context=[url,'output/video', True])
+    print(dl_job)
+    print(job_queue._queue)
+
+    iter = True
+    count = 0
+    while iter:
+        if job_queue._queue.empty():
+            iter = False
+        if count > 1000:
+            iter = False
+        time.sleep(10)
+
 
     bot.send_message(chat_id=update.message.chat_id,
                      text="start time? (%H:%M:%S.xxx)")
 
     return ONE
-
 
 def set_start_time(bot, update, user_data):
     logger.info("set_start_time")
@@ -119,7 +133,15 @@ def set_stop_time(bot, update, user_data):
     bot.send_message(chat_id=update.message.chat_id,
                 text="starting the magic !")
 
-    video_path = 'output/video/' + user_data['id'] + '.mkv'
+    video_path = 'output/video/' + user_data['id'] +'.'
+    if os.path.isfile(video_path + user_data['ext']):
+        video_path += user_data['ext']
+    elif os.path.isfile(video_path + 'mkv'):
+        video_path += '.mkv'
+    else:
+        logger.error('video file not found')
+        return ZERO
+    
     video.video_to_frames(video_path,'output/frames', 10, user_data['start'], user_data['stop'])
     video.frames_to_gif('output/frames','output/gif/{}.gif'.format(user_data['id']), 5)
 
@@ -137,9 +159,10 @@ updater = Updater(token)
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
-        ZERO: [MessageHandler(Filters.text, set_url, pass_user_data=True)],
+        ZERO: [MessageHandler(Filters.text, set_url, pass_user_data=True, pass_job_queue=True)],
         ONE: [MessageHandler(Filters.text, set_start_time, pass_user_data=True)],
-        TWO: [MessageHandler(Filters.text, set_stop_time, pass_user_data=True)]        
+        TWO: [MessageHandler(Filters.text, set_stop_time, pass_user_data=True)]
+        
     },
     fallbacks=[CommandHandler('start', start)]
 )
