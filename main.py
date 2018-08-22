@@ -17,5 +17,5 @@ updater.dispatcher.add_handler(MessageHandler(Filters.text, echo))
 updater.start_webhook(listen="0.0.0.0",
                       port=PORT,
                       url_path=TOKEN)
-updater.bot.setWebhook("https://Y2GBot.herokuapp.com/" + TOKEN)
+updater.bot.setWebhook("https://agile-springs-16890.herokuapp.com/" + TOKEN)
 updater.idle()
