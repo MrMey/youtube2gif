@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 ZERO, ONE, TWO, THREE = range(4)
 
 
-token = os.environ.get("TELEGRAM_TOKEN")
+TOKEN = os.environ.get("TELEGRAM_TOKEN")
 # list of authorized id
 auth_ids = [171531269]
 
@@ -154,7 +154,15 @@ def set_stop_time(bot, update, user_data):
     video.clear_output_folder('output')
     return ZERO
 
-updater = Updater(token)
+
+PORT = int(os.environ.get('PORT', '8443'))
+updater = Updater(TOKEN)
+# add handlers
+updater.start_webhook(listen="0.0.0.0",
+                      port=PORT,
+                      url_path=TOKEN)
+updater.bot.set_webhook("https://<appname>.herokuapp.com/" + TOKEN)
+updater.idle()
 
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
