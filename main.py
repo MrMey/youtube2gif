@@ -155,15 +155,9 @@ def set_stop_time(bot, update, user_data):
     return ZERO
 
 
-PORT = int(os.environ.get('PORT', '8443'))
+PORT = int(os.environ.get('PORT', '5000'))
 updater = Updater(TOKEN)
 # add handlers
-updater.start_webhook(listen="0.0.0.0",
-                      port=PORT,
-                      url_path=TOKEN)
-updater.bot.set_webhook("https://Y2GBot.herokuapp.com/" + TOKEN)
-updater.idle()
-
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
@@ -176,4 +170,9 @@ conv_handler = ConversationHandler(
 )
 
 updater.dispatcher.add_handler(conv_handler)
-updater.start_polling()
+
+updater.start_webhook(listen="0.0.0.0",
+                      port=PORT,
+                      url_path=TOKEN)
+updater.bot.set_webhook("https://Y2GBot.herokuapp.com/" + TOKEN)
+updater.idle()
