@@ -28,7 +28,7 @@ logging.config.dictConfig(config_dict)
 logger = logging.getLogger(__name__)
 
 ZERO, ONE, TWO, THREE = range(4)
-
+WEBHOOK = True
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 # list of authorized id
@@ -49,6 +49,7 @@ def restricted(func):
 @restricted
 def start(bot, update):
     logger.info('start')
+    video.init_output_folder('output')
     bot.send_message(chat_id=update.message.chat_id,
                      text="Send me a youtube link to start")
     return ZERO
@@ -67,21 +68,23 @@ def set_url(bot, update, user_data, job_queue):
         return ZERO
     
 
-    result = video.dl_youtube_url(url,'output/video', False)
+    result = video.dl_youtube_url(url, False, 'output')
     user_data['id'] = result['id']
     user_data['ext'] = result['ext']
 
     bot.send_message(chat_id=update.message.chat_id,
                      text="video is downloading")
 
-    dl_job = job_queue.run_once(video.async_dl_youtube_url, when=10,context=[url,'output/video', True])
+    dl_job = job_queue.run_once(video.async_dl_youtube_url, when=10,context=[url, True, 'output'])
     print(dl_job)
     print(job_queue._queue)
 
     iter = True
     count = 0
     while iter:
-        if job_queue._queue.empty():
+        if os.path.isfile('output/' + user_data['id'] + '.' + user_data['ext']):
+            iter = False
+        if os.path.isfile('output/' + user_data['id'] + '.mkv'):
             iter = False
         if count > 1000:
             iter = False
@@ -133,7 +136,7 @@ def set_stop_time(bot, update, user_data):
     bot.send_message(chat_id=update.message.chat_id,
                 text="starting the magic !")
 
-    video_path = 'output/video/' + user_data['id'] +'.'
+    video_path = 'output/' + user_data['id'] +'.'
     if os.path.isfile(video_path + user_data['ext']):
         video_path += user_data['ext']
     elif os.path.isfile(video_path + 'mkv'):
@@ -142,16 +145,18 @@ def set_stop_time(bot, update, user_data):
         logger.error('video file not found')
         return ZERO
     
-    video.video_to_frames(video_path,'output/frames', 10, user_data['start'], user_data['stop'])
-    video.frames_to_gif('output/frames','output/gif/{}.gif'.format(user_data['id']), 5)
+    video.video_to_frames(video_path, 10,'output', user_data['start'], user_data['stop'])
+    video.frames_to_gif('output/{}.gif'.format(user_data['id']),'output', 5)
 
     bot.send_message(chat_id=update.message.chat_id,
                      text="gif saved")
     
-    gif_path = 'output/gif/' + user_data['id'] + '.gif'
+    gif_path = 'output/' + user_data['id'] + '.gif'
+    print(gif_path)
     bot.send_video(chat_id=update.message.chat_id,
                     video=open(gif_path,'rb'))
-    video.clear_output_folder('output')
+
+    # TODO clear folder
     return ZERO
 
 
@@ -171,8 +176,11 @@ conv_handler = ConversationHandler(
 
 updater.dispatcher.add_handler(conv_handler)
 
-updater.start_webhook(listen="0.0.0.0",
-                      port=PORT,
-                      url_path=TOKEN)
-updater.bot.set_webhook("https://agile-springs-16890.herokuapp.com/" + TOKEN)
-updater.idle()
+if WEBHOOK:
+    updater.start_webhook(listen="0.0.0.0",
+                        port=PORT,
+                        url_path=TOKEN)
+    updater.bot.set_webhook("https://agile-springs-16890.herokuapp.com/" + TOKEN)
+    updater.idle()
+else:
+    updater.start_polling()

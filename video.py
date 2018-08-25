@@ -4,21 +4,18 @@ import shutil
 import youtube_dl
 
 
-def clear_output_folder(output_folder):
-    shutil.rmtree(output_folder + '/video')
-    os.mkdir(output_folder + '/video')
-    shutil.rmtree(output_folder + '/frames')
-    os.mkdir(output_folder + '/frames')
-    shutil.rmtree(output_folder + '/gif')
-    os.mkdir(output_folder + '/gif')
+def init_output_folder(output_folder):
+    if os.path.isdir(output_folder):
+        shutil.rmtree(output_folder)
+    os.mkdir(output_folder)
 
 
 def async_dl_youtube_url(bot, job):
     print("start download")
-    dl_youtube_url(job.context[0], job.context[1],job.context[2])
+    dl_youtube_url(job.context[0], job.context[1], job.context[2])
     print("finish download")
 
-def dl_youtube_url(url, output_folder, download):
+def dl_youtube_url(url, download, output_folder):
     ydl = youtube_dl.YoutubeDL({'outtmpl': output_folder + '/%(id)s'})
 
     with ydl:
@@ -29,21 +26,7 @@ def dl_youtube_url(url, output_folder, download):
     return result
 
 
-def get_output_file_path(output_folder, fmt=[]):
-    file_name = os.listdir(output_folder)
-
-    if len(file_name) == 0:
-        raise Exception('no video file found')
-    if len(file_name) > 1:
-        raise Exception('flush file before running')
-
-    file_name = file_name[0]
-    if file_name.split('.')[-1] not in fmt:
-        raise Exception('wrong format for file')
-    return output_folder + '/' + file_name
-
-
-def video_to_frames(video_path, output_folder, fps, start=None, stop=None):
+def video_to_frames(video_path, fps, output_folder, start=None, stop=None):
 
     command = 'ffmpeg  -i {} '.format(video_path)
     if start is not None:
@@ -76,20 +59,13 @@ def get_video_info(video_path):
     return duration, nb_frames
 
 
-def frames_to_gif(frames_folder, gif_path, delay):
+def frames_to_gif(gif_path, output_folder, delay):
     command = "convert -delay {} -fuzz 2% -loop 0 {}/*.jpg {}".format(
-        delay, frames_folder, gif_path)
+        delay, output_folder, gif_path)
     print(command)
     response = os.system(command)
 
     return response
-
-
-def select_frames(frame_folder, start, stop):
-    frame_list = [frame_folder +
-                  '/frame-{}.jpg'.format(x) for x in range(start, stop)]
-    for file in frame_list:
-        shutil.copy(file, 'output/sub_frames')
 
 
 def optimize(input_path, output_path, mode='-O3'):
