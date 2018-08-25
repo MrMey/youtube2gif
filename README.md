@@ -47,15 +47,23 @@ Send to the bot:
 ```
 /start
 ```
-Then it will ask you a YouTube link
-(add screen shot)
+Then it will ask you a YouTube link.  
+![First step](images/conv_1.png)  
 Then it will ask you a start time 
+Then it will ask you a stop time.  
+![Second step](images/conv_2.png)  
+Then it will process the gif and send it back.  
+![Third step](images/conv_3.png)  
+And here is the result.  
+![Result](images/wYSmOVX1KJM.gif)  
 
-Then it will ask you a stop time
 
-Then it will process the gif and send it back.
-
-
+# Further improvements:
+* better catch errors
+* add limitation to prevent from creating to big gif that couldn't be sent
+* add a turn-around to sent big gif
+* allow multi-users
+* move to a cleaner storage
 
 # Acknowledgement
 * Python-telegram-bot library
