@@ -1,10 +1,10 @@
 import video
 import os
-
+import sys
 
 def test_download():
     url = "https://www.youtube.com/watch?v=SgzXKCuM9CA"
-    response = video.dl_youtube_url(url, 'output/video')
+    response = video.dl_youtube_url(url, 'output/video', True)
     print(response.keys())
     print('output/video/{}.{}'.format(response['id'],response['ext']))
 
@@ -28,9 +28,13 @@ def test_optimize():
 def test_clear_output_folder():
     video.clear_output_folder('output')
 
-test_download()
-#test_video_info()
-#test_video_to_frames()
-#test_frame_to_gif()
-#test_optimize()
-#test_clear_output_folder()
+if __name__ == "__main__":
+    func = sys.argv[1]
+    dic = {
+        "test_download":test_download,
+        "test_video_info":test_video_info,
+        "test_frame_to_gif":test_frame_to_gif,
+        "test_video_to_frames":test_video_to_frames,
+        "test_clear_output_folder":test_clear_output_folder
+    }
+    dic[func]()
