@@ -28,9 +28,16 @@ logging.config.dictConfig(config_dict)
 logger = logging.getLogger(__name__)
 
 ZERO, ONE, TWO, THREE = range(4)
-WEBHOOK = True
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
+if TOKEN is None:
+    with open("bot_config.json","r") as bot_configuration_file:
+        bot_config_dict = json.load(bot_configuration_file)
+    TOKEN = bot_config_dict["token"]
+    WEBHOOK = False
+else:
+    WEBHOOK = True
+
 # list of authorized id
 auth_ids = [171531269]
 
@@ -96,6 +103,7 @@ def set_url(bot, update, user_data, job_queue):
 
     return ONE
 
+@restricted
 def set_start_time(bot, update, user_data):
     logger.info("set_start_time")
 
@@ -117,6 +125,7 @@ def set_start_time(bot, update, user_data):
     
     return TWO
 
+@restricted
 def set_stop_time(bot, update, user_data):
     logger.info("set_stop_time")
 
