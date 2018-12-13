@@ -149,7 +149,7 @@ def set_stop_time(bot, update, user_data):
     if os.path.isfile(video_path + user_data['ext']):
         video_path += user_data['ext']
     elif os.path.isfile(video_path + 'mkv'):
-        video_path += '.mkv'
+        video_path += 'mkv'
     else:
         logger.error('video file not found')
         return ZERO
