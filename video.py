@@ -2,6 +2,16 @@ import os
 import subprocess
 import shutil
 import youtube_dl
+import logging
+
+def clear_user_files(output_folder, user_id):
+    if not os.path.isdir(output_folder):
+        os.mkdir(output_folder)
+
+    list_file = os.listdir(output_folder)
+    for file in list_file:
+        if file.startswith(user_id):
+            os.remove("output/"+file)
 
 
 def init_output_folder(output_folder):
@@ -10,13 +20,43 @@ def init_output_folder(output_folder):
     os.mkdir(output_folder)
 
 
-def async_dl_youtube_url(bot, job):
-    print("start download")
-    dl_youtube_url(job.context[0], job.context[1], job.context[2])
-    print("finish download")
+def async_process(bot, job):
+    logging.info("start download")
+    gif = job.context[0]
+    
+    dl_youtube_url(gif.url, True, 'output/'+gif.id)
+    logging.info("finish download")
 
-def dl_youtube_url(url, download, output_folder):
-    ydl = youtube_dl.YoutubeDL({'outtmpl': output_folder + '/%(id)s'})
+    video_path = "output/" + gif.id + '.'
+    print(video_path)
+    if os.path.isfile(video_path + gif.metadata["ext"]):
+        video_path += gif.metadata["ext"]
+    elif os.path.isfile(video_path + 'mkv'):
+        video_path += 'mkv'
+    else:
+        logging.error('video file not found')
+        return 0
+    
+    video_to_frames(video_path, 10,
+                          'output',
+                          gif.id,
+                          gif.start_time,
+                          gif.stop_time)
+
+    frames_to_gif('output/{}.gif'.format(gif.id),
+                        'output',
+                        gif.id,
+                        5)
+
+    gif_path = 'output/' + gif.id + '.gif'
+    print(gif_path)
+    bot.send_video(chat_id=job.context[1],
+                   video=open(gif_path, 'rb'))
+    return 0
+
+
+def dl_youtube_url(url, download, output_path):
+    ydl = youtube_dl.YoutubeDL({'outtmpl': output_path})
 
     with ydl:
         result = ydl.extract_info(
@@ -26,7 +66,7 @@ def dl_youtube_url(url, download, output_folder):
     return result
 
 
-def video_to_frames(video_path, fps, output_folder, start=None, stop=None):
+def video_to_frames(video_path, fps, output_folder, user_id, start=None, stop=None):
 
     command = 'ffmpeg  -i {} '.format(video_path)
     if start is not None:
@@ -35,33 +75,15 @@ def video_to_frames(video_path, fps, output_folder, start=None, stop=None):
     if stop is not None:
         command += '-to {} '.format(stop)
 
-    command += '-r {} -vf scale=320:-1 "{}/frame-%03d.jpg"'.format(
-        fps, output_folder)
+    command += '-r {} -vf scale=320:-1 "{}/{}-%03d.jpg"'.format(
+        fps, output_folder, user_id)
     print(command)
     return os.system(command)
 
 
-def get_video_info(video_path):
-    command = "ffprobe -select_streams v -show_streams {} 2>/dev/null | grep -w duration".format(
-        video_path)
-    print(command)
-    duration = str(subprocess.check_output(command, shell=True))
-    duration = duration[:-3]
-    duration = float(duration.rstrip('\n').split('=')[1])
-
-    command = "ffprobe -select_streams v -show_streams {} 2>/dev/null | grep -w nb_frames".format(
-        video_path)
-    print(command)
-    nb_frames = str(subprocess.check_output(command, shell=True))
-    nb_frames = nb_frames[:-3]
-    nb_frames = float(nb_frames.rstrip('\n').split('=')[1])
-    print(nb_frames)
-    return duration, nb_frames
-
-
-def frames_to_gif(gif_path, output_folder, delay):
-    command = "convert -delay {} -fuzz 2% -loop 0 {}/*.jpg {}".format(
-        delay, output_folder, gif_path)
+def frames_to_gif(gif_path, output_folder, user_id, delay):
+    command = "convert -delay {} -fuzz 2% -loop 0 {}/{}-*.jpg {}".format(
+        delay, output_folder, user_id, gif_path)
     print(command)
     response = os.system(command)
 

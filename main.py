@@ -10,6 +10,7 @@ from telegram.ext import Updater, CommandHandler, Filters
 from telegram.ext import CallbackQueryHandler, ConversationHandler, MessageHandler
 
 from conversation import start, set_start_time, set_stop_time, set_url
+import video
 
 # If applicable, delete the existing log file to generate a fresh log file during each execution
 if os.path.isfile("run_log.log"):
@@ -32,26 +33,23 @@ if TOKEN is None:
 else:
     WEBHOOK = True
 
-# list of authorized id
-auth_ids = [171531269]
-
-
-
 PORT = int(os.environ.get('PORT', '5000'))
 updater = Updater(TOKEN)
 # add handlers
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
-        0: [MessageHandler(Filters.text, set_url, pass_user_data=True, pass_job_queue=True)],
+        0: [MessageHandler(Filters.text, set_url, pass_user_data=True)],
         1: [MessageHandler(Filters.text, set_start_time, pass_user_data=True)],
-        2: [MessageHandler(Filters.text, set_stop_time, pass_user_data=True)]
+        2: [MessageHandler(Filters.text, set_stop_time, pass_user_data=True, pass_job_queue=True)]
         
     },
     fallbacks=[CommandHandler('start', start)]
 )
 
 updater.dispatcher.add_handler(conv_handler)
+
+video.init_output_folder("output")
 
 if WEBHOOK:
     updater.start_webhook(listen="0.0.0.0",
