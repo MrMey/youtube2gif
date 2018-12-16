@@ -2,9 +2,7 @@
 
 import os
 import json
-import logging
-import logging.config
-
+import logger
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from telegram.ext import Updater, CommandHandler, Filters
 from telegram.ext import CallbackQueryHandler, ConversationHandler, MessageHandler
@@ -13,16 +11,11 @@ from conversation import start, set_start_time, set_stop_time, set_url
 import video
 
 # If applicable, delete the existing log file to generate a fresh log file during each execution
-if os.path.isfile("run_log.log"):
-    os.remove("run_log.log")
-
-with open("log_config.json", 'r') as logging_configuration_file:
-    config_dict = json.load(logging_configuration_file)
- 
-logging.config.dictConfig(config_dict)
+if os.path.isfile("info.log"):
+    os.remove("info.log")
  
 # Log that the logger was configured
-logger = logging.getLogger(__name__)
+logger = logger.get_logger()
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 if TOKEN is None:

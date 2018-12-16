@@ -7,6 +7,7 @@ import logging
 import video
 import gif
 
+logger = logging.getLogger("main.conversation")
 # list of authorized id
 auth_ids = [171531269, 571432478]
 
@@ -18,7 +19,7 @@ def restricted(func):
     def wrapped(bot, update, *args, **kwargs):
         user_id = update.effective_user.id
         if user_id not in auth_ids:
-            print("Unauthorized access denied for {}.".format(user_id))
+            logger.warning("Unauthorized access denied for {}.".format(user_id))
             return
         return func(bot, update, *args, **kwargs)
     return wrapped
@@ -26,7 +27,7 @@ def restricted(func):
 
 @restricted
 def start(bot, update):
-    logging.info('start')
+    logger.info('start')
     bot.send_message(chat_id=update.message.chat_id,
                      text="Send me a youtube link to start")
     return 0
@@ -34,7 +35,7 @@ def start(bot, update):
 
 @restricted
 def set_url(bot, update, user_data):
-    logging.info("set_url")
+    logger.info("set_url")
 
     video.clear_user_files('output', str(update.effective_user.id))
     url = update.message.text
@@ -59,7 +60,7 @@ def set_url(bot, update, user_data):
 
 @restricted
 def set_start_time(bot, update, user_data):
-    logging.info("set_start_time")
+    logger.info("set_start_time")
 
     start = update.message.text
 
@@ -78,7 +79,7 @@ def set_start_time(bot, update, user_data):
 
 @restricted
 def set_stop_time(bot, update, user_data, job_queue):
-    logging.info("set_stop_time")
+    logger.info("set_stop_time")
 
     stop = update.message.text
 
@@ -92,13 +93,13 @@ def set_stop_time(bot, update, user_data, job_queue):
     bot.send_message(chat_id=update.message.chat_id,
                      text="starting the magic !")
 
-    logging.info("start download")
-
-    video.dl_youtube_url(user_data["gif"].url, True, 'output/'+user_data["gif"].id)
-    logging.info("finish download")
+    logger.info("start download")
+    video.dl_youtube_url(user_data["gif"].url,
+                         True, 'output/'+user_data["gif"].id)
+    logger.info("finish download")
 
     video_path = "output/" + user_data["gif"].id + '.'
-    print(video_path)
+
     if os.path.isfile(video_path + user_data["gif"].metadata["ext"]):
         video_path += user_data["gif"].metadata["ext"]
     elif os.path.isfile(video_path + 'mkv'):
@@ -106,24 +107,16 @@ def set_stop_time(bot, update, user_data, job_queue):
     else:
         logging.error('video file not found')
         return 0
-    
-    video.video_to_frames(video_path, 10,
-                          'output',
-                          user_data["gif"].id,
-                          user_data["gif"].start_time,
-                          user_data["gif"].stop_time)
 
-    video.frames_to_gif('output/{}.gif'.format(user_data["gif"].id),
-                        'output',
-                        user_data["gif"].id,
-                        5)
+    output_path = 'output/' + user_data["gif"].id + '_extract.mp4'
+    video.extract_video(video_path,
+                        output_path,
+                        user_data["gif"].start_time.strftime("%H:%M:%S.%f"),
+                        user_data["gif"].stop_time.strftime("%H:%M:%S.%f"))
 
-    gif_path = 'output/' + user_data["gif"].id + '.gif'
-    print(gif_path)
     bot.send_video(chat_id=update.message.chat_id,
-                   video=open(gif_path, 'rb'))
+                   video=open(output_path, 'rb'))
 
     bot.send_message(chat_id=update.message.chat_id,
-                   text="Send me a youtube link to start")
+                     text="Send me a youtube link to start")
     return 0
-

@@ -4,6 +4,9 @@ import shutil
 import youtube_dl
 import logging
 
+logger = logging.getLogger("main.video")
+
+
 def clear_user_files(output_folder, user_id):
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
@@ -21,11 +24,11 @@ def init_output_folder(output_folder):
 
 
 def async_process(bot, job):
-    logging.info("start download")
+    logger.info("start download")
     gif = job.context[0]
-    
+
     dl_youtube_url(gif.url, True, 'output/'+gif.id)
-    logging.info("finish download")
+    logger.info("finish download")
 
     video_path = "output/" + gif.id + '.'
     print(video_path)
@@ -34,19 +37,19 @@ def async_process(bot, job):
     elif os.path.isfile(video_path + 'mkv'):
         video_path += 'mkv'
     else:
-        logging.error('video file not found')
+        logger.error('video file not found')
         return 0
-    
+
     video_to_frames(video_path, 10,
-                          'output',
-                          gif.id,
-                          gif.start_time,
-                          gif.stop_time)
+                    'output',
+                    gif.id,
+                    gif.start_time,
+                    gif.stop_time)
 
     frames_to_gif('output/{}.gif'.format(gif.id),
-                        'output',
-                        gif.id,
-                        5)
+                  'output',
+                  gif.id,
+                  5)
 
     gif_path = 'output/' + gif.id + '.gif'
     print(gif_path)
@@ -64,6 +67,15 @@ def dl_youtube_url(url, download, output_path):
             download=download  # We just want to extract the info
         )
     return result
+
+
+def extract_video(video_path, output_path, start, stop):
+    command = 'ffmpeg -ss {} -i {} -to {} -vcodec copy -an {}'.format(start,
+                                                                              video_path,
+                                                                              stop,
+                                                                              output_path)
+    logger.info(command)
+    return os.system(command)
 
 
 def video_to_frames(video_path, fps, output_folder, user_id, start=None, stop=None):
